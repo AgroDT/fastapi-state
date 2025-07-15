@@ -1,0 +1,34 @@
+[build-system]
+requires = ["uv_build>=0.7.21,<0.8.0"]
+build-backend = "uv_build"
+
+[project]
+name = "fastapi-state-examples"
+version = "0.1.0"
+readme = "README.md"
+authors = [
+    { name = "Petr Tsymbarovich", email = "petr@tsymbarovich.ru" }
+]
+requires-python = ">=3.12"
+
+dependencies = [
+    "aiosqlite~=0.21",
+    "fastapi-state",
+    "sqlalchemy~=2.0",
+    "uvicorn[standard]~=0.34",
+    "wsproto~=1.2",
+]
+
+[project.scripts]
+fastapi-state-example-simple = "fastapi_state_examples.simple:main"
+fastapi-state-example-sa = "fastapi_state_examples.sa:main"
+fastapi-state-example-chat = "fastapi_state_examples.chat:main"
+
+[tool.uv.sources]
+fastapi-state = { workspace = true }
+
+[tool.ruff]
+extend = "../pyproject.toml"
+
+[tool.ruff.lint]
+ignore = ["D101", "D102", "D103", "D107"]

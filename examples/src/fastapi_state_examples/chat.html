@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>FastAPI Chat</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 1em;
+    }
+
+    #chat {
+      display: none;
+    }
+
+    #messages {
+      border: 1px solid #ccc;
+      padding: 0.5em;
+      height: 200px;
+      overflow-y: auto;
+      margin-bottom: 1em;
+    }
+  </style>
+</head>
+
+<body>
+  <form id="login">
+    <h2>Enter your name</h2>
+    <input id="nameInput" placeholder="Your name" minlength="3" required />
+    <button>Join</button>
+  </form>
+
+  <form id="chat">
+    <h2>Chat</h2>
+    <div id="messages"></div>
+    <input id="messageInput" placeholder="Your message" minlength="3" required />
+    <button>Send</button>
+  </form>
+
+  <script>
+    const loginForm = document.getElementById('login');
+    const chatForm = document.getElementById('chat');
+    const messageInput = document.getElementById('messageInput');
+
+    let socket = null;
+
+    loginForm.onsubmit = async (evt) => {
+      evt.preventDefault();
+      const name = document.getElementById('nameInput').value.trim();
+      await fetch(`/login/${encodeURIComponent(name)}`, { method: 'POST' });
+      loginForm.style.display = 'none';
+      chatForm.style.display = 'block';
+
+      socket = new WebSocket(`ws://${location.host}/messages`);
+      const messagesDiv = document.getElementById('messages');
+      socket.onmessage = (event) => {
+        const { user, message } = JSON.parse(event.data);
+        const div = document.createElement('div');
+        div.textContent = `${user}: ${message}`;
+        messagesDiv.appendChild(div);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      };
+    };
+
+    chatForm.onsubmit = async (evt) => {
+      evt.preventDefault();
+      const text = messageInput.value.trim();
+      await fetch('/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(text),
+      });
+      messageInput.value = '';
+    };
+  </script>
+</body>
+
+</html>
