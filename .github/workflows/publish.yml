@@ -1,0 +1,45 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+
+    environment:
+      name: pypi
+      url: https://pypi.org/p/fastapi-state
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.7.21"
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install the project
+        run: uv sync --locked --all-groups
+
+      - name: Lint
+        run: uv run --no-sync ruff check
+
+      - name: Check formatting
+        run: uv run --no-sync ruff format --check
+
+      - name: Run tests
+        run: uv run --no-sync pytest
+
+      - name: Build package with uv
+        run: uv build
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

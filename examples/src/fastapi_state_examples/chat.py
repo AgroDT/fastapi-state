@@ -48,7 +48,6 @@ class Chat:
                 await self._broadcast({'user': user, 'message': 'Disconnected'})
                 break
 
-
     async def run(self) -> None:
         while True:
             message = await self.message_queue[1].receive()
