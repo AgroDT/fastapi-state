@@ -11,11 +11,11 @@ from __future__ import annotations
 import inspect
 from typing import TYPE_CHECKING, overload
 
-from fastapi import FastAPI, Request, WebSocket  # noqa: TC002
+from fastapi import Request, WebSocket  # noqa: TC002
 
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
+    from collections.abc import Awaitable, Callable, MutableMapping
 
     type StateInitializer[**P, R] = Callable[P, R | Awaitable[R]]
 
@@ -38,8 +38,8 @@ def state[**P, R](
     1. Register the state under the function's own name (used without parentheses).
     2. Register the state under a custom name (used with a string argument).
 
-    The decorated function is called once and its result is stored
-    in `app.state` under the given name. Supports both sync and async initializers.
+    The decorated function is called once and its result is stored in Starlette's
+    lifespan state under the given name. Supports both sync and async initializers.
 
     Notes:
         Mypy does not handle decorator closures well when used with a custom name.
@@ -97,7 +97,7 @@ class State[**P, R]:
         self._name = name
         self._init = init
 
-    async def inject(self, app: FastAPI, *args: P.args, **kwargs: P.kwargs) -> R:
+    async def inject(self, app_state: MutableMapping, *args: P.args, **kwargs: P.kwargs) -> R:
         """Inject the state into the FastAPI app.
 
         Raises:
@@ -108,13 +108,13 @@ class State[**P, R]:
 
         """
         name = self._name
-        if hasattr(app.state, name):
+        if name in app_state:
             raise DuplicateStateNameError(name)
 
         state = self._init(*args, **kwargs)
         if inspect.isawaitable(state):
             state = await state
-        setattr(app.state, name, state)
+        app_state[name] = state
 
         return state
 
@@ -141,7 +141,7 @@ class State[**P, R]:
             The stored state value.
 
         """
-        return getattr(request.app.state, self._name)
+        return getattr(request.state, self._name)
 
     async def extract_ws(self, ws: WebSocket) -> R:
         """Extract the state value from a websocket object.
@@ -155,7 +155,7 @@ class State[**P, R]:
             The stored state value.
 
         """
-        return getattr(ws.app.state, self._name)
+        return getattr(ws.state, self._name)
 
 
 class DuplicateStateNameError(ValueError):

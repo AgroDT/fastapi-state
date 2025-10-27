@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -22,6 +24,15 @@ def test_ws(client: TestClient) -> None:
 
 
 @pytest.mark.anyio
-async def test_duplicate_name(app: FastAPI, dict_state: State[..., dict[str, str]]) -> None:
-    with pytest.raises(DuplicateStateNameError):
-        await dict_state.inject(app)
+async def test_duplicate_name(dict_state: State[..., dict[str, str]]) -> None:
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI):
+        state: dict = {}
+        await dict_state.inject(state)
+        await dict_state.inject(state)
+        yield state
+
+    app = FastAPI(lifespan=lifespan)
+
+    with pytest.raises(DuplicateStateNameError), TestClient(app):
+        pass

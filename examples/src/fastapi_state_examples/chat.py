@@ -65,18 +65,19 @@ def chat_state() -> Chat:
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):  # noqa: ANN201
-    chat = await chat_state.inject(app)
+async def lifespan(_app: FastAPI):  # noqa: ANN201
+    state: dict = {}
+    chat = await chat_state.inject(state)
     async with anyio.create_task_group() as tg:
         tg.start_soon(chat.run)
-        yield
+        yield state
         tg.cancel_scope.cancel()
     for ws in chat.connections:
         await ws.close()
 
 
 app = FastAPI(lifespan=lifespan)
-index = HTMLResponse(pathlib.Path(__file__).joinpath('../chat.html').read_bytes())
+index = HTMLResponse(pathlib.Path(__file__).with_suffix('.html').read_bytes())
 
 
 def get_user(request: Request | WebSocket) -> str:

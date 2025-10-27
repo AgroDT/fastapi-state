@@ -22,9 +22,10 @@ def database() -> Database:
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):  # noqa: ANN201
-    await database.inject(app)
-    yield
+async def lifespan(_app: FastAPI):  # noqa: ANN201
+    state: dict = {}
+    await database.inject(state)
+    yield state
 
 
 DatabaseDep = Annotated[Database, Depends(database.extract)]

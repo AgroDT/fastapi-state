@@ -26,10 +26,11 @@ def test_client_fixture(app: FastAPI):
 @pytest.fixture(scope='session', name='app')
 def app_fixture(dict_state: DictState, async_const_state: AsyncConstState) -> FastAPI:
     @asynccontextmanager
-    async def lifespan(app: FastAPI):
-        await dict_state.inject(app)
-        await async_const_state.inject(app)
-        yield
+    async def lifespan(_app: FastAPI):
+        state: dict = {}
+        await dict_state.inject(state)
+        await async_const_state.inject(state)
+        yield state
 
     app = FastAPI(lifespan=lifespan)
 

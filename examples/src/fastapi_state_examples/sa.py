@@ -38,9 +38,10 @@ async def database(url: str):  # noqa: ANN201
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):  # noqa: ANN201
-    await database.inject(app, 'sqlite+aiosqlite://')
-    yield
+async def lifespan(_app: FastAPI):  # noqa: ANN201
+    state: dict = {}
+    await database.inject(state, 'sqlite+aiosqlite://')
+    yield state
 
 
 async def get_session(  # noqa: ANN201
